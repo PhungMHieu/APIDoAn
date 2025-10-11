@@ -1,0 +1,66 @@
+# Docker ignore file for My Finance project
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Cache
+.npm/
+.yarn/
+.cache/
+
+# Test
+test-results/
+test-coverage/
+
+# Development database files
+*.sqlite
+*.db
+
+# Docker files to exclude
+docker-compose.override.yml
+docker-compose.local.yml
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+docs/
+
+# Configuration files that shouldn't be in container
+.eslintrc*
+.prettierrc*
+jest.config.*

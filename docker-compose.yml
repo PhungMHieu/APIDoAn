@@ -1,0 +1,191 @@
+services:
+  # PostgreSQL Database for Transaction Service
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: my_finance_postgres
+    environment:
+      POSTGRES_DB: transaction_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - my_finance_network
+
+  # MongoDB for Account Service
+  mongodb:
+    image: mongo:7.0
+    container_name: my_finance_mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: account_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./docker/init-scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    networks:
+      - my_finance_network
+
+  # MySQL Database for API Gateway
+  mysql-db:
+    image: mysql:8.0
+    container_name: my_finance_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: gateway_db
+      MYSQL_USER: mysql_user
+      MYSQL_PASSWORD: mysql123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/init-scripts/mysql-init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - my_finance_network
+
+  # pgAdmin for PostgreSQL Management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: my_finance_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@myfinance.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/config/servers.json:/pgadmin4/servers.json
+    depends_on:
+      - postgres-db
+    networks:
+      - my_finance_network
+
+  # Mongo Express for MongoDB Management
+  mongo-express:
+    image: mongo-express:latest
+    container_name: my_finance_mongo_express
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
+    networks:
+      - my_finance_network
+
+  # phpMyAdmin for MySQL Management
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    platform: linux/amd64
+    container_name: my_finance_phpmyadmin
+    environment:
+      PMA_HOST: mysql-db
+      PMA_PORT: 3306
+      PMA_USER: mysql_user
+      PMA_PASSWORD: mysql123
+      MYSQL_ROOT_PASSWORD: root123
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql-db
+    networks:
+      - my_finance_network
+
+  # Redis for Caching (Optional)
+  redis:
+    image: redis:7-alpine
+    container_name: my_finance_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - my_finance_network
+
+  # Transaction Service
+  transaction-service:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.transaction
+    container_name: my_finance_transaction_service
+    environment:
+      NODE_ENV: production
+      DROP_SCHEMA: "true"
+      TRANSACTION_SVC_PORT: 3002
+      TRANSACTION_DB_HOST: postgres-db
+      TRANSACTION_DB_PORT: 5432
+      TRANSACTION_DB_NAME: transaction_db
+      TRANSACTION_DB_USERNAME: postgres
+      TRANSACTION_DB_PASSWORD: postgres123
+    ports:
+      - "3001:3002"
+    depends_on:
+      - postgres-db
+    networks:
+      - my_finance_network
+
+  # Account Service
+  account-service:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.account
+    container_name: my_finance_account_service
+    environment:
+      NODE_ENV: production
+      ACCOUNT_SVC_PORT: 3003
+      ACCOUNT_DB_HOST: mongodb
+      ACCOUNT_DB_PORT: 27017
+      ACCOUNT_DB_NAME: account_db
+      ACCOUNT_DB_USERNAME: admin
+      ACCOUNT_DB_PASSWORD: admin123
+    ports:
+      - "3002:3003"
+    depends_on:
+      - mongodb
+    networks:
+      - my_finance_network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.gateway
+    container_name: my_finance_api_gateway
+    environment:
+      NODE_ENV: production
+      API_GATEWAY_PORT: 3001
+      GATEWAY_DB_HOST: mysql-db
+      GATEWAY_DB_PORT: 3306
+      GATEWAY_DB_NAME: gateway_db
+      GATEWAY_DB_USERNAME: mysql_user
+      GATEWAY_DB_PASSWORD: mysql123
+      TRANSACTION_SERVICE_URL: http://transaction-service:3002
+      ACCOUNT_SERVICE_URL: http://account-service:3003
+    ports:
+      - "3000:3001"
+    depends_on:
+      - mysql-db
+      - transaction-service
+      - account-service
+    networks:
+      - my_finance_network
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  mysql_data:
+  pgadmin_data:
+  redis_data:
+
+networks:
+  my_finance_network:
+    driver: bridge
