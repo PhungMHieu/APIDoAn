@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, HttpStatus, HttpCode, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Param, Body, HttpStatus, HttpCode, BadRequestException, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { TransactionSvcService } from './transaction-svc.service';
 import { TransactionEntity } from './entities/transaction.entity';
-import { ApiResponse } from '@app/shared';
+import { ApiResponse, JwtAuthGuard, CurrentUser, Roles, RolesGuard } from '@app/shared';
+import type { CurrentUserData } from '@app/shared';
 
 // Helper function để validate UUID
 function isValidUUID(uuid: string): boolean {
@@ -11,18 +12,21 @@ function isValidUUID(uuid: string): boolean {
 }
 
 @ApiTags('transactions')
+@ApiBearerAuth() // Add JWT authentication requirement in Swagger
+@UseGuards(JwtAuthGuard, RolesGuard) // Protect all endpoints with JWT
 @Controller('transactions')
 export class TransactionSvcController {
   constructor(private readonly transactionSvcService: TransactionSvcService) {}
 
-  @ApiOperation({ summary: 'Get all transactions' })
+  @ApiOperation({ summary: 'Get all transactions for current user' })
   @SwaggerApiResponse({ 
     status: 200, 
     description: 'List of all transactions',
     type: [TransactionEntity]
   })
   @Get()
-  async findAll(): Promise<TransactionEntity[]> {
+  async findAll(@CurrentUser() user: CurrentUserData): Promise<TransactionEntity[]> {
+    console.log('Authenticated user:', user);
     return this.transactionSvcService.findAll();
   }
 
@@ -35,7 +39,10 @@ export class TransactionSvcController {
   })
   @SwaggerApiResponse({ status: 404, description: 'Transaction not found' })
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<TransactionEntity> {
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserData
+  ): Promise<TransactionEntity> {
     if (!isValidUUID(id)) {
       throw new BadRequestException('Invalid UUID format');
     }
