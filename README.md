@@ -10,11 +10,35 @@ Hệ thống quản lý tài chính cá nhân được xây dựng với NestJS 
 │                   http://localhost:3000                    │
 └─────────────────┬───────────────────────────┬───────────────┘
                   │                           │
-          ┌───────▼─────────┐         ┌───────▼─────────┐
-          │ Transaction Svc │         │  Account Svc    │
-          │  (PostgreSQL)   │         │   (MongoDB)     │
-          │      :3001      │         │      :3002      │
-          └─────────────────┘         └─────────────────┘
+          ┌───────▼─────────┐         ┌───────▼─────────┐         ┌───────────────┐
+          │ Transaction Svc │         │  Account Svc    │         │   Auth Svc    │
+          │  (PostgreSQL)   │         │   (MongoDB)     │         │ (PostgreSQL)  │
+          │      :3001      │         │      :3002      │         │     :3003     │
+          └─────────────────┘         └─────────────────┘         └───────────────┘
+```
+
+## 🔐 Authentication
+
+Hệ thống sử dụng **JWT-based email authentication**:
+
+- **Register**: Email + Password (tự động nhận role USER)
+- **Login**: Email-based authentication
+- **Protected Routes**: JWT token required
+- **Role-based Access**: USER, ADMIN, GUEST roles
+
+📖 Chi tiết: Xem [EMAIL-AUTH-UPDATE.md](./EMAIL-AUTH-UPDATE.md)
+
+**Quick Test:**
+```bash
+# Register
+curl -X POST http://localhost:3003/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","email":"test@example.com","password":"Test123456"}'
+
+# Login
+curl -X POST http://localhost:3003/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"Test123456"}'
 ```
 
 ## 🚀 Quick Start
@@ -79,6 +103,7 @@ Swagger UI có sẵn tại:
 - **API Gateway**: http://localhost:3000/api
 - **Transaction Service**: http://localhost:3001/api
 - **Account Service**: http://localhost:3002/api
+- **Auth Service**: http://localhost:3003/api 🔐
 
 ## 🛠️ Scripts Hỗ trợ
 
@@ -103,6 +128,7 @@ Commands:
 npm run start:gateway      # API Gateway
 npm run start:transaction  # Transaction Service
 npm run start:account      # Account Service
+npm run start:auth         # Auth Service
 
 # Docker shortcuts
 npm run docker:up          # Start production environment

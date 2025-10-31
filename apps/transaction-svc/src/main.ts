@@ -19,6 +19,17 @@ async function bootstrap() {
     .setDescription('Transaction Management Microservice')
     .setVersion('1.0')
     .addTag('transactions')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
     .build();
   
   const document = SwaggerModule.createDocument(app, config);

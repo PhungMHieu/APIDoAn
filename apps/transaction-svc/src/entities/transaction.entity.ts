@@ -10,12 +10,12 @@ export class TransactionEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ApiProperty({ 
-    description: 'Transaction title',
-    example: 'Lunch at restaurant'
-  })
-  @Column({ type: 'varchar', length: 255 })
-  title: string;
+  // @ApiProperty({ 
+  //   description: 'Transaction title',
+  //   example: 'Lunch at restaurant'
+  // })
+  // @Column({ type: 'varchar', length: 255 })
+  // title: string;
 
   @ApiProperty({ 
     description: 'Transaction amount',
@@ -26,7 +26,7 @@ export class TransactionEntity {
 
   @ApiProperty({ 
     description: 'Transaction category',
-    example: 'Food'
+    example: 'food'
   })
   @Column({ type: 'varchar', length: 100 })
   category: string;
@@ -37,32 +37,34 @@ export class TransactionEntity {
     required: false
   })
   @Column({ type: 'text', nullable: true })
-  description?: string;
+  note?: string;
+
+  // @ApiProperty({ 
+  //   description: 'Transaction type',
+  //   enum: ['income', 'expense'],
+  //   example: 'expense'
+  // })
+  // @Column({ type: 'enum', enum: ['income', 'expense'] })
+  // type: 'income' | 'expense';
+
+  // @ApiProperty({ 
+  //   description: 'User ID who owns this transaction',
+  //   example: '123e4567-e89b-12d3-a456-426614174000'
+  // })
+  // @Column({ type: 'uuid' })
+  // userId: string;
 
   @ApiProperty({ 
-    description: 'Transaction type',
-    enum: ['income', 'expense'],
-    example: 'expense'
+    description: 'Transaction creation timestamp',
+    example: '2025-10-31T00:00:00.000Z',
+    type: Date
   })
-  @Column({ type: 'enum', enum: ['income', 'expense'] })
-  type: 'income' | 'expense';
+  @CreateDateColumn({ name: 'dateTime' })
+  dateTime: Date;
 
-  @ApiProperty({ 
-    description: 'User ID who owns this transaction',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
-  @Column({ type: 'uuid' })
-  userId: string;
-
-  @ApiProperty({ 
-    description: 'Transaction creation timestamp'
-  })
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @ApiProperty({ 
-    description: 'Transaction last update timestamp'
-  })
-  @UpdateDateColumn()
-  updatedAt: Date;
+  // @ApiProperty({ 
+  //   description: 'Transaction last update timestamp'
+  // })
+  // @UpdateDateColumn()
+  // updatedAt: Date;
 }

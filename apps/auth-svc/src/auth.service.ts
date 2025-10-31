@@ -23,7 +23,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<{ message: string; user: Partial<User> }> {
-    const { username, email, password, roles } = registerDto;
+    const { username, email, password } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({
@@ -37,12 +37,12 @@ export class AuthService {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
+    // Create new user with default USER role
     const user = this.userRepository.create({
       username,
       email,
       password: hashedPassword,
-      roles: roles || [UserRole.USER],
+      roles: [UserRole.USER], // Always assign USER role by default
     });
 
     await this.userRepository.save(user);
@@ -57,10 +57,10 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<{ access_token: string; user: Partial<User> }> {
-    const { username, password } = loginDto;
+    const { email, password } = loginDto;
 
-    // Find user
-    const user = await this.userRepository.findOne({ where: { username } });
+    // Find user by email
+    const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');

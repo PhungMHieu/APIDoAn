@@ -13,7 +13,7 @@ export class TransactionSvcService {
   async findAll(): Promise<TransactionEntity[]> {
     try {
       return await this.transactionRepository.find({
-        order: { createdAt: 'DESC' }
+        order: { dateTime: 'DESC' }
       });
     } catch (error) {
       throw new BadRequestException(`Failed to fetch transactions: ${error.message}`);
@@ -42,7 +42,7 @@ export class TransactionSvcService {
   async create(transactionData: Partial<TransactionEntity>): Promise<TransactionEntity> {
     try {
       // Validate required fields
-      if (!transactionData.title || !transactionData.amount || !transactionData.type || !transactionData.userId) {
+      if (!transactionData.amount) {
         throw new BadRequestException('Missing required fields: title, amount, type, userId');
       }
 
@@ -106,16 +106,16 @@ export class TransactionSvcService {
     }
   }
 
-  async findByUserId(userId: string): Promise<TransactionEntity[]> {
-    try {
-      return await this.transactionRepository.find({
-        where: { userId },
-        order: { createdAt: 'DESC' }
-      });
-    } catch (error) {
-      throw new BadRequestException(`Failed to fetch transactions for user ${userId}: ${error.message}`);
-    }
-  }
+  // async findByUserId(userId: string): Promise<TransactionEntity[]> {
+  //   try {
+  //     return await this.transactionRepository.find({
+  //       where: { userId },
+  //       order: { dateTime: 'DESC' }
+  //     });
+  //   } catch (error) {
+  //     throw new BadRequestException(`Failed to fetch transactions for user ${userId}: ${error.message}`);
+  //   }
+  // }
 
   getHello(): string {
     return 'Transaction Service is running successfully!';

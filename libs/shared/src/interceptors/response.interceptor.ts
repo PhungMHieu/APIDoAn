@@ -95,11 +95,19 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
       return obj.map(item => this.removeNullFields(item)).filter(item => item !== null && item !== undefined);
     }
 
+    // Handle Date objects - keep them as-is
+    if (obj instanceof Date) {
+      return obj;
+    }
+
     if (typeof obj === 'object') {
       const cleaned: any = {};
       for (const [key, value] of Object.entries(obj)) {
         if (value !== null && value !== undefined) {
-          if (typeof value === 'object' && !Array.isArray(value)) {
+          // Check if value is a Date before treating it as a regular object
+          if (value instanceof Date) {
+            cleaned[key] = value;
+          } else if (typeof value === 'object' && !Array.isArray(value)) {
             const cleanedValue = this.removeNullFields(value);
             if (cleanedValue !== null && Object.keys(cleanedValue).length > 0) {
               cleaned[key] = cleanedValue;

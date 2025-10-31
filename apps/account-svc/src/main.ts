@@ -11,6 +11,17 @@ async function bootstrap() {
     .setDescription('Account Management Microservice')
     .setVersion('1.0')
     .addTag('accounts')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
     .build();
   
   const document = SwaggerModule.createDocument(app, config);

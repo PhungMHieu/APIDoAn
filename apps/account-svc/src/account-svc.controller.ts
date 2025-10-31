@@ -5,7 +5,7 @@ import { JwtAuthGuard, CurrentUser, Roles, RolesGuard } from '@app/shared/auth';
 import type { CurrentUserData } from '@app/shared';
 
 @ApiTags('accounts')
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller()
 export class AccountSvcController {

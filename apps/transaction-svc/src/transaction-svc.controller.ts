@@ -12,7 +12,7 @@ function isValidUUID(uuid: string): boolean {
 }
 
 @ApiTags('transactions')
-@ApiBearerAuth() // Add JWT authentication requirement in Swagger
+@ApiBearerAuth('JWT-auth') // Add JWT authentication requirement in Swagger
 @UseGuards(JwtAuthGuard, RolesGuard) // Protect all endpoints with JWT
 @Controller('transactions')
 export class TransactionSvcController {
@@ -129,14 +129,14 @@ export class TransactionSvcController {
     description: 'List of user transactions',
     type: [TransactionEntity]
   })
-  @Get('user/:userId')
-  async findByUserId(@Param('userId') userId: string): Promise<TransactionEntity[]> {
-    if (!isValidUUID(userId)) {
-      throw new BadRequestException('Invalid UUID format for userId');
-    }
+  // @Get('user/:userId')
+  // async findByUserId(@Param('userId') userId: string): Promise<TransactionEntity[]> {
+  //   if (!isValidUUID(userId)) {
+  //     throw new BadRequestException('Invalid UUID format for userId');
+  //   }
     
-    return await this.transactionSvcService.findByUserId(userId);
-  }
+  //   return await this.transactionSvcService.findByUserId(userId);
+  // }
 
   @ApiOperation({ summary: 'Health check endpoint' })
   @SwaggerApiResponse({ status: 200, description: 'Service is running' })

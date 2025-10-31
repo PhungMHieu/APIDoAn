@@ -15,19 +15,48 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
+  @ApiOperation({ 
+    summary: 'Register a new user',
+    description: 'Register with username, email, and password. User role is automatically assigned.'
+  })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   @ApiResponse({ status: 409, description: 'Username or email already exists' })
-  @ApiBody({ type: RegisterDto })
+  @ApiBody({ 
+    type: RegisterDto,
+    examples: {
+      user: {
+        summary: 'Register new user',
+        value: {
+          username: 'johndoe',
+          email: 'john@example.com',
+          password: 'SecurePass123'
+        }
+      }
+    }
+  })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
   @Post('login')
-  @ApiOperation({ summary: 'Login and get JWT token' })
+  @ApiOperation({ 
+    summary: 'Login with email and password',
+    description: 'Login using email address instead of username'
+  })
   @ApiResponse({ status: 201, description: 'Successfully logged in' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  @ApiBody({ type: LoginDto })
+  @ApiBody({ 
+    type: LoginDto,
+    examples: {
+      user: {
+        summary: 'Login with email',
+        value: {
+          email: 'john@example.com',
+          password: 'SecurePass123'
+        }
+      }
+    }
+  })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }

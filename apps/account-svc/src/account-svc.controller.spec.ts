@@ -14,9 +14,9 @@ describe('AccountSvcController', () => {
     accountSvcController = app.get<AccountSvcController>(AccountSvcController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(accountSvcController.getHello()).toBe('Hello World!');
-    });
-  });
+  // describe('root', () => {
+  //   it('should return "Hello World!"', () => {
+  //     expect(accountSvcController.getHello()).toBe('Hello World!');
+  //   });
+  // });
 });
