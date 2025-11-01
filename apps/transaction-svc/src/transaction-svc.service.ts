@@ -10,11 +10,30 @@ export class TransactionSvcService {
     private transactionRepository: Repository<TransactionEntity>,
   ) {}
 
-  async findAll(): Promise<TransactionEntity[]> {
+  async findAll(year?: number, month?: number): Promise<TransactionEntity[]> {
     try {
-      return await this.transactionRepository.find({
-        order: { dateTime: 'DESC' }
-      });
+      const queryBuilder = this.transactionRepository.createQueryBuilder('transaction');
+      
+      // Filter by year and month if provided
+      if (year && month) {
+        // Create date range for the specific month
+        const startDate = new Date(year, month - 1, 1); // month - 1 because JS months are 0-indexed
+        const endDate = new Date(year, month, 0, 23, 59, 59, 999); // Last day of month
+        
+        queryBuilder.where('transaction.dateTime >= :startDate', { startDate })
+                    .andWhere('transaction.dateTime <= :endDate', { endDate });
+      } else if (year) {
+        // Filter by year only
+        const startDate = new Date(year, 0, 1);
+        const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+        
+        queryBuilder.where('transaction.dateTime >= :startDate', { startDate })
+                    .andWhere('transaction.dateTime <= :endDate', { endDate });
+      }
+      
+      queryBuilder.orderBy('transaction.dateTime', 'DESC');
+      
+      return await queryBuilder.getMany();
     } catch (error) {
       throw new BadRequestException(`Failed to fetch transactions: ${error.message}`);
     }

@@ -19,9 +19,18 @@ export class TransactionEntity {
 
   @ApiProperty({ 
     description: 'Transaction amount',
-    example: 50000
+    example: 50000,
+    type: Number
   })
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ 
+    type: 'decimal', 
+    precision: 10, 
+    scale: 2,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value)
+    }
+  })
   amount: number;
 
   @ApiProperty({ 

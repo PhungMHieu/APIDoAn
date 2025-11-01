@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, HttpStatus, HttpCode, BadRequestException, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, HttpStatus, HttpCode, BadRequestException, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { TransactionSvcService } from './transaction-svc.service';
 import { TransactionEntity } from './entities/transaction.entity';
 import { ApiResponse, JwtAuthGuard, CurrentUser, Roles, RolesGuard } from '@app/shared';
@@ -18,16 +18,37 @@ function isValidUUID(uuid: string): boolean {
 export class TransactionSvcController {
   constructor(private readonly transactionSvcService: TransactionSvcService) {}
 
-  @ApiOperation({ summary: 'Get all transactions for current user' })
+  @ApiOperation({ summary: 'Get transactions by month/year' })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Filter by year (e.g., 2025)', example: 2025 })
+  @ApiQuery({ name: 'month', required: false, type: Number, description: 'Filter by month (1-12)', example: 10 })
   @SwaggerApiResponse({ 
     status: 200, 
-    description: 'List of all transactions',
+    description: 'List of transactions filtered by year/month',
     type: [TransactionEntity]
   })
   @Get()
-  async findAll(@CurrentUser() user: CurrentUserData): Promise<TransactionEntity[]> {
+  async findAll(
+    @CurrentUser() user: CurrentUserData,
+    @Query('year') year?: string,
+    @Query('month') month?: string,
+  ): Promise<TransactionEntity[]> {
     console.log('Authenticated user:', user);
-    return this.transactionSvcService.findAll();
+    
+    // Parse query params
+    const yearNum = year ? parseInt(year, 10) : undefined;
+    const monthNum = month ? parseInt(month, 10) : undefined;
+    
+    // Validate month range
+    if (monthNum && (monthNum < 1 || monthNum > 12)) {
+      throw new BadRequestException('Month must be between 1 and 12');
+    }
+    
+    // Validate year
+    if (yearNum && (yearNum < 1900 || yearNum > 2100)) {
+      throw new BadRequestException('Invalid year');
+    }
+    
+    return this.transactionSvcService.findAll(yearNum, monthNum);
   }
 
   @ApiOperation({ summary: 'Get transaction by ID' })

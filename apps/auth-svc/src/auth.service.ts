@@ -27,11 +27,11 @@ export class AuthService {
 
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({
-      where: [{ username }, { email }],
+      where: [{ email }],
     });
 
     if (existingUser) {
-      throw new ConflictException('Username or email already exists');
+      throw new ConflictException('email already exists');
     }
 
     // Hash password
