@@ -1,7 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('transactions')
+@Index(['userId'])
+@Index(['userId', 'dateTime'])
 export class TransactionEntity {
   @ApiProperty({ 
     description: 'Unique identifier for the transaction',
@@ -48,20 +50,12 @@ export class TransactionEntity {
   @Column({ type: 'text', nullable: true })
   note?: string;
 
-  // @ApiProperty({ 
-  //   description: 'Transaction type',
-  //   enum: ['income', 'expense'],
-  //   example: 'expense'
-  // })
-  // @Column({ type: 'enum', enum: ['income', 'expense'] })
-  // type: 'income' | 'expense';
-
-  // @ApiProperty({ 
-  //   description: 'User ID who owns this transaction',
-  //   example: '123e4567-e89b-12d3-a456-426614174000'
-  // })
-  // @Column({ type: 'uuid' })
-  // userId: string;
+  @ApiProperty({ 
+    description: 'User ID who owns this transaction',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @Column({ type: 'uuid' })
+  userId: string;
 
   @ApiProperty({ 
     description: 'Transaction creation timestamp',

@@ -11,6 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-scripts/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql
     networks:
       - my_finance_network
 
@@ -136,17 +137,21 @@ services:
       NODE_ENV: production
       DROP_SCHEMA: "true"
       TRANSACTION_SVC_PORT: 3002
+      TRANSACTION_GRPC_PORT: 50051
       TRANSACTION_DB_HOST: postgres-db
       TRANSACTION_DB_PORT: 5432
       TRANSACTION_DB_USERNAME: postgres
       TRANSACTION_DB_PASSWORD: postgres123
       TRANSACTION_DB_NAME: transaction_db
+      AUTH_GRPC_URL: auth-service:50052
       JWT_SECRET: my-super-secret-key-change-in-production
       JWT_EXPIRES_IN: 24h
     ports:
       - "3001:3002"
+      - "50051:50051"  # gRPC port
     depends_on:
       - postgres-db
+      - auth-service
     networks:
       - my_finance_network
 
@@ -188,6 +193,7 @@ services:
       GATEWAY_DB_USERNAME: mysql_user
       GATEWAY_DB_PASSWORD: mysql123
       TRANSACTION_SERVICE_URL: http://transaction-service:3002
+      TRANSACTION_GRPC_URL: transaction-service:50051
       ACCOUNT_SERVICE_URL: http://account-service:3003
       AUTH_SERVICE_URL: http://auth-service:3003
       JWT_SECRET: my-super-secret-key-change-in-production
@@ -211,6 +217,7 @@ services:
     environment:
       NODE_ENV: development
       AUTH_SVC_PORT: 3003
+      AUTH_GRPC_URL: 0.0.0.0:50052
       AUTH_DB_HOST: postgres-auth-db
       AUTH_DB_PORT: 5432
       AUTH_DB_NAME: auth_db
@@ -220,6 +227,7 @@ services:
       JWT_EXPIRES_IN: 24h
     ports:
       - "3003:3003"
+      - "50052:50052"  # gRPC port
     depends_on:
       - postgres-auth-db
     networks:

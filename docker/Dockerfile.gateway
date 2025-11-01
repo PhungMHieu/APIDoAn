@@ -32,6 +32,9 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy built application
 COPY --from=base /app/dist ./dist
 
+# Copy proto files (needed for gRPC client)
+COPY --from=base /app/proto ./proto
+
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nestjs -u 1001

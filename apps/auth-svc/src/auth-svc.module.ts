@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth-svc.controller';
+import { AuthGrpcController } from './auth-grpc.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { User } from './entities/user.entity';
 
@@ -41,7 +42,7 @@ import { User } from './entities/user.entity';
     }),
     TypeOrmModule.forFeature([User]),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, AuthGrpcController],
   providers: [AuthService, JwtStrategy],
   exports: [AuthService],
 })

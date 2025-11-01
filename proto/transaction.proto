@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package transaction;
+
+service TransactionService {
+  // Server-side streaming: stream all transactions
+  rpc StreamTransactions (StreamTransactionsRequest) returns (stream Transaction) {}
+  
+  // Get single transaction by ID
+  rpc GetTransaction (GetTransactionRequest) returns (Transaction) {}
+  
+  // Create transaction with user tracking
+  rpc CreateTransaction (CreateTransactionRequest) returns (TransactionResponse) {}
+  
+  // Update transaction with user tracking
+  rpc UpdateTransaction (UpdateTransactionRequest) returns (TransactionResponse) {}
+  
+  // Delete transaction with user tracking
+  rpc DeleteTransaction (DeleteTransactionRequest) returns (DeleteTransactionResponse) {}
+  
+  // Get user's transaction IDs
+  rpc GetUserTransactionIds (GetUserTransactionIdsRequest) returns (UserTransactionIdsResponse) {}
+}
+
+message StreamTransactionsRequest {
+  // Optional filters
+  optional string monthYear = 1;  // Format: MM/YYYY or "future"
+}
+
+message GetTransactionRequest {
+  string id = 1;
+}
+
+message CreateTransactionRequest {
+  string userId = 1;  // User ID from auth service
+  double amount = 2;
+  string category = 3;
+  optional string note = 4;
+}
+
+message UpdateTransactionRequest {
+  string transactionId = 1;
+  string userId = 2;  // For verification
+  optional double amount = 3;
+  optional string category = 4;
+  optional string note = 5;
+}
+
+message DeleteTransactionRequest {
+  string transactionId = 1;
+  string userId = 2;  // For verification
+}
+
+message GetUserTransactionIdsRequest {
+  string userId = 1;
+  optional string monthYear = 2;  // Filter by month
+}
+
+message Transaction {
+  string id = 1;
+  string userId = 2;  // User ID who owns this transaction
+  double amount = 3;
+  string category = 4;
+  optional string note = 5;
+  string dateTime = 6;  // ISO 8601 format
+}
+
+message TransactionResponse {
+  bool success = 1;
+  string message = 2;
+  optional Transaction transaction = 3;
+}
+
+message DeleteTransactionResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UserTransactionIdsResponse {
+  repeated string transactionIds = 1;
+}

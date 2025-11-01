@@ -33,7 +33,7 @@ export class TransactionSvcController {
     return await this.transactionSvcService.getAvailableMonths();
   }
 
-  @ApiOperation({ summary: 'Get transactions by month/year or future' })
+  @ApiOperation({ summary: 'Get my transactions by month/year or future' })
   @ApiQuery({ 
     name: 'monthYear', 
     required: false, 
@@ -52,7 +52,7 @@ export class TransactionSvcController {
   })
   @SwaggerApiResponse({ 
     status: 200, 
-    description: 'List of transactions filtered by month/year or future. If no monthYear provided, returns all transactions.',
+    description: 'List of YOUR transactions filtered by month/year or future. Only returns transactions you created.',
     type: [TransactionEntity]
   })
   @Get()
@@ -61,7 +61,8 @@ export class TransactionSvcController {
     @Query('monthYear') monthYear?: string,
   ): Promise<TransactionEntity[]> {
     console.log('Authenticated user:', user);
-    return this.transactionSvcService.findAll(monthYear);
+    // Return only user's own transactions
+    return this.transactionSvcService.getTransactionsByUser(user.userId, monthYear);
   }
 
   @ApiOperation({ summary: 'Get transaction by ID' })
@@ -84,7 +85,7 @@ export class TransactionSvcController {
     return await this.transactionSvcService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Create new transaction' })
+  @ApiOperation({ summary: 'Create new transaction with user tracking' })
   @ApiBody({ 
     type: TransactionEntity,
     description: 'Transaction data',
@@ -112,59 +113,156 @@ export class TransactionSvcController {
     type: TransactionEntity
   })
   @Post()
-  async create(@Body() transactionData: Partial<TransactionEntity>): Promise<TransactionEntity> {
-    return this.transactionSvcService.create(transactionData);
+  async create(
+    @Body() transactionData: Partial<TransactionEntity>,
+    @CurrentUser() user: CurrentUserData
+  ): Promise<TransactionEntity> {
+    return this.transactionSvcService.createWithUser(user.userId, transactionData);
   }
 
-  @ApiOperation({ summary: 'Update transaction' })
+  @ApiOperation({ 
+    summary: 'Update transaction with user verification',
+    description: '⚠️ IMPORTANT: Only "amount", "category", "note", and "dateTime" fields can be updated. Fields "id" and "userId" will be IGNORED if included in request body.'
+  })
   @ApiParam({ name: 'id', description: 'Transaction ID' })
-  @ApiBody({ type: TransactionEntity, description: 'Updated transaction data' })
+  @ApiBody({ 
+    description: 'Transaction data to update. Do NOT include "id" or "userId" fields.',
+    examples: {
+      validUpdate: {
+        summary: '✅ Valid update (recommended)',
+        value: {
+          amount: 75000,
+          category: 'Food',
+          note: 'Updated lunch expense'
+        }
+      },
+      withDateTime: {
+        summary: '✅ Update with custom date',
+        value: {
+          amount: 100000,
+          category: 'Shopping',
+          note: 'Buy clothes',
+          dateTime: '2025-11-01T10:30:00.000Z'
+        }
+      },
+      invalidWithUserId: {
+        summary: '⚠️ userId will be IGNORED',
+        description: 'Even if you send userId, it will be ignored and not updated',
+        value: {
+          amount: 50000,
+          note: 'Attempt to change owner',
+          userId: '00000000-0000-0000-0000-000000000000'
+        }
+      }
+    }
+  })
   @SwaggerApiResponse({ 
     status: 200, 
-    description: 'Transaction updated successfully',
+    description: 'Transaction updated successfully. Only allowed fields (amount, category, note, dateTime) are updated.',
     type: TransactionEntity
   })
   @SwaggerApiResponse({ status: 404, description: 'Transaction not found' })
+  @SwaggerApiResponse({ status: 403, description: 'You do not have permission to update this transaction. Only the transaction owner can update it.' })
   @Put(':id')
   async update(
     @Param('id') id: string,
-    @Body() transactionData: Partial<TransactionEntity>
+    @Body() transactionData: Partial<TransactionEntity>,
+    @CurrentUser() user: CurrentUserData
   ): Promise<TransactionEntity> {
     if (!isValidUUID(id)) {
       throw new BadRequestException('Invalid UUID format');
     }
     
-    return await this.transactionSvcService.update(id, transactionData);
+    return await this.transactionSvcService.updateWithUser(id, user.userId, transactionData);
   }
 
-  @ApiOperation({ summary: 'Delete transaction' })
+  @ApiOperation({ summary: 'Delete transaction with user verification' })
   @ApiParam({ name: 'id', description: 'Transaction ID' })
   @SwaggerApiResponse({ status: 200, description: 'Transaction deleted successfully' })
   @SwaggerApiResponse({ status: 404, description: 'Transaction not found' })
+  @SwaggerApiResponse({ status: 403, description: 'You do not have permission to delete this transaction' })
   @Delete(':id')
-  async delete(@Param('id') id: string): Promise<{ message: string }> {
+  async delete(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserData
+  ): Promise<{ message: string }> {
     if (!isValidUUID(id)) {
       throw new BadRequestException('Invalid UUID format');
     }
     
-    return await this.transactionSvcService.delete(id);
+    return await this.transactionSvcService.deleteWithUser(id, user.userId);
   }
 
-  @ApiOperation({ summary: 'Get transactions by user ID' })
-  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiOperation({ summary: 'Get all transactions (Admin only)' })
+  @ApiQuery({ 
+    name: 'monthYear', 
+    required: false, 
+    type: String, 
+    description: 'Filter by month/year (MM/YYYY) or "future"'
+  })
   @SwaggerApiResponse({ 
     status: 200, 
-    description: 'List of user transactions',
+    description: 'List of ALL transactions from all users (admin access)',
     type: [TransactionEntity]
   })
-  // @Get('user/:userId')
-  // async findByUserId(@Param('userId') userId: string): Promise<TransactionEntity[]> {
-  //   if (!isValidUUID(userId)) {
-  //     throw new BadRequestException('Invalid UUID format for userId');
-  //   }
+  @Roles('admin') // Require admin role
+  @Get('all')
+  async getAllTransactions(
+    @CurrentUser() user: CurrentUserData,
+    @Query('monthYear') monthYear?: string
+  ): Promise<TransactionEntity[]> {
+    return await this.transactionSvcService.findAll(monthYear);
+  }
+
+  @ApiOperation({ summary: 'Get transactions by specific user ID' })
+  @ApiParam({ name: 'userId', description: 'User ID to get transactions for' })
+  @ApiQuery({ 
+    name: 'monthYear', 
+    required: false, 
+    type: String, 
+    description: 'Filter by month/year (MM/YYYY) or "future"'
+  })
+  @SwaggerApiResponse({ 
+    status: 200, 
+    description: 'List of transactions for specific user',
+    type: [TransactionEntity]
+  })
+  @SwaggerApiResponse({ status: 400, description: 'Invalid userId format' })
+  @Get('user/:userId')
+  async getTransactionsByUserId(
+    @CurrentUser() user: CurrentUserData,
+    @Param('userId') userId: string,
+    @Query('monthYear') monthYear?: string
+  ): Promise<TransactionEntity[]> {
+    if (!isValidUUID(userId)) {
+      throw new BadRequestException('Invalid UUID format for userId');
+    }
     
-  //   return await this.transactionSvcService.findByUserId(userId);
-  // }
+    return await this.transactionSvcService.getTransactionsByUser(userId, monthYear);
+  }
+
+  @ApiOperation({ summary: 'Get transaction IDs owned by current user' })
+  @ApiQuery({ 
+    name: 'monthYear', 
+    required: false, 
+    type: String, 
+    description: 'Filter by month/year (MM/YYYY) or "future"' 
+  })
+  @SwaggerApiResponse({ 
+    status: 200, 
+    description: 'List of transaction IDs owned by user',
+    schema: {
+      type: 'array',
+      items: { type: 'string' }
+    }
+  })
+  @Get('my/ids')
+  async getMyTransactionIds(
+    @CurrentUser() user: CurrentUserData,
+    @Query('monthYear') monthYear?: string
+  ): Promise<string[]> {
+    return await this.transactionSvcService.getUserTransactionIds(user.userId, monthYear);
+  }
 
   @ApiOperation({ summary: 'Health check endpoint' })
   @SwaggerApiResponse({ status: 200, description: 'Service is running' })
