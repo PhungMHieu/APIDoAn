@@ -43,30 +43,40 @@ export class TransactionSvcService {
     try {
       const queryBuilder = this.transactionRepository.createQueryBuilder('transaction');
       
-      // Filter by monthYear if provided (format: MM/YYYY)
+      // Filter by monthYear if provided (format: MM/YYYY or "future")
       if (monthYear) {
-        const parts = monthYear.split('/');
-        if (parts.length !== 2) {
-          throw new BadRequestException('Invalid monthYear format. Use MM/YYYY (e.g., 10/2025)');
+        // Special case: "future" means all transactions from tomorrow onwards
+        if (monthYear.toLowerCase() === 'future') {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          tomorrow.setHours(0, 0, 0, 0); // Start of tomorrow
+          
+          queryBuilder.where('transaction.dateTime >= :tomorrow', { tomorrow });
+        } else {
+          // Regular MM/YYYY format
+          const parts = monthYear.split('/');
+          if (parts.length !== 2) {
+            throw new BadRequestException('Invalid monthYear format. Use MM/YYYY (e.g., 10/2025) or "future"');
+          }
+          
+          const month = parseInt(parts[0], 10);
+          const year = parseInt(parts[1], 10);
+          
+          // Validate month and year
+          if (isNaN(month) || month < 1 || month > 12) {
+            throw new BadRequestException('Month must be between 1 and 12');
+          }
+          if (isNaN(year) || year < 1900 || year > 2100) {
+            throw new BadRequestException('Invalid year');
+          }
+          
+          // Create date range for the specific month
+          const startDate = new Date(year, month - 1, 1); // month - 1 because JS months are 0-indexed
+          const endDate = new Date(year, month, 0, 23, 59, 59, 999); // Last day of month
+          
+          queryBuilder.where('transaction.dateTime >= :startDate', { startDate })
+                      .andWhere('transaction.dateTime <= :endDate', { endDate });
         }
-        
-        const month = parseInt(parts[0], 10);
-        const year = parseInt(parts[1], 10);
-        
-        // Validate month and year
-        if (isNaN(month) || month < 1 || month > 12) {
-          throw new BadRequestException('Month must be between 1 and 12');
-        }
-        if (isNaN(year) || year < 1900 || year > 2100) {
-          throw new BadRequestException('Invalid year');
-        }
-        
-        // Create date range for the specific month
-        const startDate = new Date(year, month - 1, 1); // month - 1 because JS months are 0-indexed
-        const endDate = new Date(year, month, 0, 23, 59, 59, 999); // Last day of month
-        
-        queryBuilder.where('transaction.dateTime >= :startDate', { startDate })
-                    .andWhere('transaction.dateTime <= :endDate', { endDate });
       }
       
       queryBuilder.orderBy('transaction.dateTime', 'DESC');

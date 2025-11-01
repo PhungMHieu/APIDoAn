@@ -33,17 +33,26 @@ export class TransactionSvcController {
     return await this.transactionSvcService.getAvailableMonths();
   }
 
-  @ApiOperation({ summary: 'Get transactions by month/year' })
+  @ApiOperation({ summary: 'Get transactions by month/year or future' })
   @ApiQuery({ 
     name: 'monthYear', 
     required: false, 
     type: String, 
-    description: 'Filter by month and year in format MM/YYYY', 
-    example: '10/2025' 
+    description: 'Filter by month and year in format MM/YYYY, or use "future" for all transactions from tomorrow onwards', 
+    examples: {
+      monthly: {
+        summary: 'Get transactions for October 2025',
+        value: '10/2025'
+      },
+      future: {
+        summary: 'Get all future transactions',
+        value: 'future'
+      }
+    }
   })
   @SwaggerApiResponse({ 
     status: 200, 
-    description: 'List of transactions filtered by month/year. If no monthYear provided, returns all transactions.',
+    description: 'List of transactions filtered by month/year or future. If no monthYear provided, returns all transactions.',
     type: [TransactionEntity]
   })
   @Get()
