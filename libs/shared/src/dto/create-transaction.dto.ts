@@ -1,9 +1,6 @@
-import { IsString, IsNumber, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsNumber, IsEnum, IsOptional } from 'class-validator';
 
 export class CreateTransactionDto {
-  @IsString()
-  title: string;
-
   @IsNumber()
   amount: number;
 
@@ -12,11 +9,5 @@ export class CreateTransactionDto {
 
   @IsOptional()
   @IsString()
-  description?: string;
-
-  @IsEnum(['income', 'expense'])
-  type: 'income' | 'expense';
-
-  @IsUUID()
-  userId: string;
+  note?: string;
 }

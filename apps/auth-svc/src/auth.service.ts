@@ -25,13 +25,13 @@ export class AuthService {
   async register(registerDto: RegisterDto): Promise<{ message: string; user: Partial<User> }> {
     const { username, email, password } = registerDto;
 
-    // Check if user already exists
+    // Check if email already exists (only email needs to be unique)
     const existingUser = await this.userRepository.findOne({
-      where: [{ email }],
+      where: { email },
     });
 
     if (existingUser) {
-      throw new ConflictException('email already exists');
+      throw new ConflictException('Email already exists');
     }
 
     // Hash password

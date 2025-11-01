@@ -17,10 +17,10 @@ export class AuthController {
   @Post('register')
   @ApiOperation({ 
     summary: 'Register a new user',
-    description: 'Register with username, email, and password. User role is automatically assigned.'
+    description: 'Register with username, email, and password. User role is automatically assigned. Only email must be unique.'
   })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
-  @ApiResponse({ status: 409, description: 'Username or email already exists' })
+  @ApiResponse({ status: 409, description: 'Email already exists' })
   @ApiBody({ 
     type: RegisterDto,
     examples: {

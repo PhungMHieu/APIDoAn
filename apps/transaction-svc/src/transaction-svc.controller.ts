@@ -18,37 +18,41 @@ function isValidUUID(uuid: string): boolean {
 export class TransactionSvcController {
   constructor(private readonly transactionSvcService: TransactionSvcService) {}
 
-  @ApiOperation({ summary: 'Get transactions by month/year' })
-  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Filter by year (e.g., 2025)', example: 2025 })
-  @ApiQuery({ name: 'month', required: false, type: Number, description: 'Filter by month (1-12)', example: 10 })
+  @ApiOperation({ summary: 'Get list of available months with transactions' })
   @SwaggerApiResponse({ 
     status: 200, 
-    description: 'List of transactions filtered by year/month',
+    description: 'List of months in format MM/YYYY that have transactions, plus "future"',
+    schema: {
+      type: 'array', 
+      items: { type: 'string' },
+      example: ['6/2025', '7/2025', 'future']
+    }
+  })
+  @Get('months')
+  async getAvailableMonths(@CurrentUser() user: CurrentUserData): Promise<string[]> {
+    return await this.transactionSvcService.getAvailableMonths();
+  }
+
+  @ApiOperation({ summary: 'Get transactions by month/year' })
+  @ApiQuery({ 
+    name: 'monthYear', 
+    required: false, 
+    type: String, 
+    description: 'Filter by month and year in format MM/YYYY', 
+    example: '10/2025' 
+  })
+  @SwaggerApiResponse({ 
+    status: 200, 
+    description: 'List of transactions filtered by month/year. If no monthYear provided, returns all transactions.',
     type: [TransactionEntity]
   })
   @Get()
   async findAll(
     @CurrentUser() user: CurrentUserData,
-    @Query('year') year?: string,
-    @Query('month') month?: string,
+    @Query('monthYear') monthYear?: string,
   ): Promise<TransactionEntity[]> {
     console.log('Authenticated user:', user);
-    
-    // Parse query params
-    const yearNum = year ? parseInt(year, 10) : undefined;
-    const monthNum = month ? parseInt(month, 10) : undefined;
-    
-    // Validate month range
-    if (monthNum && (monthNum < 1 || monthNum > 12)) {
-      throw new BadRequestException('Month must be between 1 and 12');
-    }
-    
-    // Validate year
-    if (yearNum && (yearNum < 1900 || yearNum > 2100)) {
-      throw new BadRequestException('Invalid year');
-    }
-    
-    return this.transactionSvcService.findAll(yearNum, monthNum);
+    return this.transactionSvcService.findAll(monthYear);
   }
 
   @ApiOperation({ summary: 'Get transaction by ID' })
@@ -77,24 +81,18 @@ export class TransactionSvcController {
     description: 'Transaction data',
     examples: {
       example1: {
-        summary: 'Expense transaction',
+        summary: 'Shopping transaction',
         value: {
-          title: 'Lunch at restaurant',
           amount: 50000,
-          category: 'Food',
-          description: 'Lunch with colleagues',
-          type: 'expense',
-          userId: '123e4567-e89b-12d3-a456-426614174000'
+          category: 'Shopping',
+          note: 'Buy groceries'
         }
       },
       example2: {
-        summary: 'Income transaction',
+        summary: 'Food transaction',
         value: {
-          title: 'Salary',
-          amount: 1000000,
-          category: 'Salary',
-          type: 'income',
-          userId: '123e4567-e89b-12d3-a456-426614174000'
+          amount: 120000,
+          category: 'Food'
         }
       }
     }
