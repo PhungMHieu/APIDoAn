@@ -19,12 +19,12 @@ export class TransactionSvcService {
         .orderBy('transaction.dateTime', 'ASC')
         .getMany();
 
-      // Extract unique months in MM/YYYY format
+      // Extract unique months in MM/YYYY format (with 2-digit month)
       const monthsSet = new Set<string>();
       
       transactions.forEach(transaction => {
         const date = new Date(transaction.dateTime);
-        const month = (date.getMonth() + 1).toString(); // Month is 0-indexed
+        const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month is 0-indexed, pad to 2 digits
         const year = date.getFullYear().toString();
         monthsSet.add(`${month}/${year}`);
       });
